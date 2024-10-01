@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>세 자리 수 대소 비교 게임</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            background-color: #f9fafb;
+            margin: 0;
+            padding: 0;
+        }
+        #gameTitle {
+            background-color: #2563eb;
+            color: white;
+            padding: 20px;
+            font-size: 2em;
+        }
+        #scoreBoard {
+            margin: 20px;
+            font-size: 1.2em;
+        }
+        #energyBarContainer {
+            width: 80%;
+            height: 20px;
+            background-color: #ddd;
+            margin: 0 auto;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        #energyBar {
+            width: 100%;
+            height: 100%;
+            background-color: #34d399;
+            transition: width 0.1s linear;
+        }
+        #questionDisplay {
+            font-size: 2em;
+            margin: 30px;
+        }
+        #answerButtons {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        .answerButton {
+            background-color: #e0f2fe;
+            border: 2px solid #b3e5fc;
+            width: 100px;
+            height: 100px;
+            margin: 0 20px;
+            line-height: 100px;
+            font-size: 1.5em;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+        #resultMessage {
+            margin: 20px;
+            font-size: 1.5em;
+        }
+        #finalScore {
+            font-size: 2em;
+            margin: 50px;
+            color: #d32f2f;
+        }
+        #difficultySelection {
+            font-size: 1.2em;
+            margin-top: 20px;
+        }
+        .difficultyButton {
+            font-size: 1.5em;
+            padding: 10px 20px;
+            margin: 10px;
+            cursor: pointer;
+            background-color: #34d399;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        #watermark {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            font-size: 1em;
+            color: rgba(0, 0, 0, 0.3);
+            user-select: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="gameTitle">세 자리 수 대소 비교 게임</div>
+    <div id="difficultySelection">
+        난이도를 선택하세요:<br>
+        <button class="difficultyButton" onclick="setDifficulty('hard')">상</button>
+        <button class="difficultyButton" onclick="setDifficulty('medium')">중</button>
+        <button class="difficultyButton" onclick="setDifficulty('easy')">하</button>
+    </div>
+
+    <div id="scoreBoard" style="display: none;">점수: <span id="score">0</span> | 남은 기회: <span id="lives">3</span>/3</div>
+    <div id="energyBarContainer" style="display: none;">
+        <div id="energyBar"></div>
+    </div>
+    <div id="questionDisplay" style="display: none;"></div>
+    <div id="answerButtons" style="display: none;">
+        <button class="answerButton" id="answer1" onclick="checkAnswer('left')"></button>
+        <button class="answerButton" id="answer2" onclick="checkAnswer('right')"></button>
+    </div>
+
+    <div id="resultMessage"></div>
+    <div id="finalScore"></div>
+
+    <!-- 워터마크 -->
+    <div id="watermark">휘매쓰</div>
+
+    <script>
+        let score = 0;
+        let lives = 3;
+        let timeLimit;
+        let timeRemaining;
+        let energyBarInterval;
+        let scoreIncrement;
+        let questionCount = 0;
+        let difficulty;
+
+        const questions = [
+            { left: 652, right: 657, correct: 'right' },
+            { left: 711, right: 718, correct: 'right' },
+            { left: 864, right: 869, correct: 'right' },
+            { left: 523, right: 527, correct: 'right' },
+            { left: 342, right: 347, correct: 'right' },
+            { left: 593, right: 595, correct: 'right' },
+            { left: 245, right: 248, correct: 'right' },
+            { left: 987, right: 992, correct: 'right' },
+            { left: 751, right: 756, correct: 'right' },
+            { left: 434, right: 437, correct: 'right' },
+            { left: 643, right: 646, correct: 'right' },
+            { left: 591, right: 594, correct: 'right' },
+            { left: 728, right: 732, correct: 'right' },
+            { left: 314, right: 318, correct: 'right' },
+            { left: 829, right: 832, correct: 'right' },
+            { left: 376, right: 380, correct: 'right' },
+            { left: 452, right: 456, correct: 'right' },
+            { left: 963, right: 968, correct: 'right' },
+            { left: 125, right: 128, correct: 'right' },
+            { left: 677, right: 680, correct: 'right' },
+            { left: 812, right: 815, correct: 'right' },
+            { left: 950, right: 955, correct: 'right' },
+            { left: 491, right: 494, correct: 'right' },
+            { left: 312, right: 317, correct: 'right' },
+            { left: 203, right: 208, correct: 'right' },
+            { left: 775, right: 778, correct: 'right' },
+            { left: 639, right: 644, correct: 'right' },
+            { left: 542, right: 546, correct: 'right' },
+            { left: 690, right: 694, correct: 'right' },
+            { left: 840, right: 843, correct: 'right' },
+            { left: 121, right: 124, correct: 'right' },
+            { left: 911, right: 915, correct: 'right' },
+            { left: 237, right: 241, correct: 'right' },
+            { left: 579, right: 582, correct: 'right' },
+            { left: 736, right: 740, correct: 'right' },
+            { left: 102, right: 106, correct: 'right' },
+            { left: 923, right: 926, correct: 'right' },
+            { left: 498, right: 502, correct: 'right' },
+            { left: 701, right: 705, correct: 'right' },
+            { left: 872, right: 875, correct: 'right' },
+            { left: 156, right: 160, correct: 'right' },
+            { left: 461, right: 466, correct: 'right' },
+            { left: 385, right: 390, correct: 'right' },
+            { left: 643, right: 647, correct: 'right' },
+            { left: 725, right: 729, correct: 'right' },
+            { left: 935, right: 940, correct: 'right' },
+            { left: 513, right: 518, correct: 'right' },
+            { left: 283, right: 288, correct: 'right' },
+            { left: 819, right: 822, correct: 'right' },
+        ];
+
+        function setDifficulty(level) {
+            difficulty = level;
+            switch (level) {
+                case 'hard':
+                    timeLimit = 20000;
+                    scoreIncrement = 20;
+                    break;
+                case 'medium':
+                    timeLimit = 30000;
+                    scoreIncrement = 15;
+                    break;
+                case 'easy':
+                    timeLimit = 40000;
+                    scoreIncrement = 10;
+                    break;
+            }
+            startGame();
+        }
+
+        function startGame() {
+            document.getElementById('difficultySelection').style.display = 'none';
+            document.getElementById('scoreBoard').style.display = 'block';
+            document.getElementById('energyBarContainer').style.display = 'block';
+            document.getElementById('questionDisplay').style.display = 'block';
+            document.getElementById('answerButtons').style.display = 'block';
+            score = 0;
+            lives = 3;
+            updateScoreBoard();
+            nextQuestion();
+        }
+
+        function nextQuestion() {
+            const currentQuestion = questions[questionCount % questions.length];
+            document.getElementById('questionDisplay').textContent = "큰 수를 고르시오:";
+            document.getElementById('answer1').textContent = currentQuestion.left;
+            document.getElementById('answer2').textContent = currentQuestion.right;
+            document.getElementById('resultMessage').textContent = '';
+            startTimer();
+        }
+
+        function checkAnswer(selected) {
+            const currentQuestion = questions[questionCount % questions.length];
+            clearInterval(energyBarInterval); // 타이머 중단
+            if (selected === currentQuestion.correct) {
+                score += scoreIncrement;
+                document.getElementById('resultMessage').style.color = 'green';
+                document.getElementById('resultMessage').textContent = '정답입니다!';
+            } else {
+                lives--;
+                document.getElementById('resultMessage').style.color = 'red';
+                document.getElementById('resultMessage').textContent = '오답입니다!';
+            }
+            updateScoreBoard();
+
+            questionCount++;
+            if (lives > 0) {
+                setTimeout(nextQuestion, 1000);
+            } else {
+                endGame();
+            }
+        }
+
+        function startTimer() {
+            timeRemaining = timeLimit;
+            updateEnergyBar();
+            energyBarInterval = setInterval(() => {
+                timeRemaining -= 100;
+                updateEnergyBar();
+                if (timeRemaining <= 0) {
+                    clearInterval(energyBarInterval);
+                    lives--;
+                    document.getElementById('resultMessage').style.color = 'red';
+                    document.getElementById('resultMessage').textContent = '시간 초과!';
+                    updateScoreBoard();
+                    if (lives > 0) {
+                        setTimeout(nextQuestion, 1000);
+                    } else {
+                        endGame();
+                    }
+                }
+            }, 100);
+            // 회차마다 1% 시간 감소
+            timeLimit = timeLimit * 0.99;
+        }
+
+        function updateEnergyBar() {
+            const width = (timeRemaining / timeLimit) * 100;
+            document.getElementById('energyBar').style.width = width + '%';
+        }
+
+        function updateScoreBoard() {
+            document.getElementById('score').textContent = score;
+            document.getElementById('lives').textContent = lives;
+        }
+
+        function endGame() {
+            document.getElementById('questionDisplay').textContent = '';
+            document.getElementById('answerButtons').style.display = 'none';
+            document.getElementById('finalScore').textContent = `게임 종료! 총점: ${score}점`;
+        }
+    </script>
+
+</body>
+</html>
